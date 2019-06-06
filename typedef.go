@@ -1,11 +1,9 @@
 package main
 
-import "encoding/json"
-
 type request struct {
 	Action     string `json:"action"`
 	Payload    interface{}
-	RawPayload json.RawMessage `json:"payload"`
+	RawPayload []byte `json:"payload"`
 }
 
 type response struct {
