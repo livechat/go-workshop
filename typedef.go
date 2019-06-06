@@ -9,9 +9,10 @@ type request struct {
 }
 
 type response struct {
-	Action  string `json:"action"`
-	Success bool   `json:"success"`
-	Error   string `json:"error,omitempty"`
+	Action  string      `json:"action"`
+	Success bool        `json:"success"`
+	Payload interface{} `json:"payload,omitempty"`
+	Error   string      `json:"error,omitempty"`
 }
 
 type push struct {

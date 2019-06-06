@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"log"
 )
 
 type handlers struct {
@@ -25,7 +26,8 @@ func newHandlers(connections *connections) *handlers {
 func (h *handlers) loginHandler(connection *connection, payload interface{}) (interface{}, error) {
 	pl, ok := payload.(*requestLogin)
 	if !ok {
-		return nil, errors.New("invalid payload")
+		log.Print("error: invalid login payload")
+		return nil, errors.New("internal")
 	}
 
 	if pl.Name == "" {
@@ -53,7 +55,8 @@ func (h *handlers) loginHandler(connection *connection, payload interface{}) (in
 func (h *handlers) broadcastHandler(connection *connection, payload interface{}) (interface{}, error) {
 	pl, ok := payload.(*requestBroadcast)
 	if !ok {
-		return nil, errors.New("invalid payload")
+		log.Print("error: invalid broadcast payload")
+		return nil, errors.New("internal")
 	}
 
 	if pl.Text == "" {

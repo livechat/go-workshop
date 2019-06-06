@@ -44,7 +44,7 @@ func (c *connection) reader(wg *sync.WaitGroup) {
 			// TODO: remove from connections
 			return
 		}
-		c.messageHandler(req)
+		c.handleRequest(req)
 	}
 }
 
@@ -54,12 +54,12 @@ func (c *connection) sendMessage(msg interface{}) {
 	}
 }
 
-func (c *connection) messageHandler(req *request) {
+func (c *connection) handleRequest(req *request) {
 	log.Print("request: ", req.Action)
 
 	if len(req.RawPayload) == 0 {
 		log.Printf("error: empty payload")
-		// TODO: send response with error
+		c.sendError(req.Action, "empty payload")
 		return
 	}
 
@@ -70,21 +70,41 @@ func (c *connection) messageHandler(req *request) {
 		req.Payload = &requestBroadcast{}
 	default:
 		log.Printf("error: unknown action: %s", req.Action)
-		// TODO: send response with error
+		c.sendError(req.Action, "unknown action")
 		return
 	}
 
 	if err := json.Unmarshal(req.RawPayload, req.Payload); err != nil {
 		log.Printf("error unmarshaling payload: %v", err)
-		// TODO: send response with error
+		c.sendError(req.Action, "internal")
 		return
 	}
 
-	_, err := c.handlers.list[req.Action](c, req.Payload)
+	resPayload, err := c.handlers.list[req.Action](c, req.Payload)
 	if err != nil {
 		log.Printf("error handling request: %v", err)
-		// TODO: send response with error
+		c.sendError(req.Action, err.Error())
 		return
 	}
-	// TODO: send response
+
+	c.sendSuccess(req.Action, resPayload)
+}
+
+func (c *connection) sendSuccess(action string, payload interface{}) {
+	response := &response{
+		Action:  action,
+		Success: true,
+		Payload: payload,
+	}
+
+	c.sendMessage(response)
+}
+
+func (c *connection) sendError(action, msg string) {
+	response := &response{
+		Action: action,
+		Error:  msg,
+	}
+
+	c.sendMessage(response)
 }
