@@ -1,18 +1,15 @@
 package main
 
 import (
-	"bytes"
-	"encoding/gob"
+	"encoding/json"
 	"testing"
 )
 
 func BenchmarkDecode(b *testing.B) {
-	var buf bytes.Buffer
-	gob.NewEncoder(&buf).Encode(&requestLogin{
+	rawPayload, _ := json.Marshal(&requestLogin{
 		Name: "Ben",
 		Avatar: "https://server.com/image.jpg",
 	})
-	rawPayload := buf.Bytes()
 
 	for i := 0; i < b.N; i++ {
 		var result interface{}
