@@ -75,6 +75,6 @@ func (c *connections) broadcastUsersDetails() {
 
 func (c *connections) broadcast(msg interface{}) {
 	for _, connection := range c.list {
-		connection.writeC <- msg
+		connection.send(msg)
 	}
 }

@@ -44,7 +44,7 @@ func (c *connection) reader() {
 			close(c.writeC)
 			return
 		}
-		c.handleRequest(req)
+		go c.handleRequest(req)
 	}
 }
 
@@ -103,7 +103,7 @@ func (c *connection) sendSuccess(action string, payload interface{}) {
 		Payload: payload,
 	}
 
-	c.writeC <- response
+	c.send(response)
 }
 
 func (c *connection) sendError(action, msg string) {
@@ -112,7 +112,16 @@ func (c *connection) sendError(action, msg string) {
 		Error:  msg,
 	}
 
-	c.writeC <- response
+	c.send(response)
+}
+
+func (c *connection) send(msg interface{}) {
+	select {
+	case c.writeC <- msg:
+		log.Print("sending a message to client")
+	case <-c.closeC:
+		log.Print("skip send - connection closed")
+	}
 }
 
 func decode(src []byte, dst interface{}) error {
