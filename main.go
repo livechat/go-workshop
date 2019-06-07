@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 )
 
 const port = 8080

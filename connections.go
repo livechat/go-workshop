@@ -16,7 +16,6 @@ func newConnections() *connections {
 }
 
 func (c *connections) register(name string, connection *connection) error {
-	// NO MUTEX ON PURPOSE
 	if _, exists := c.list[name]; exists {
 		return fmt.Errorf("connection %s already registered", name)
 	}
@@ -29,7 +28,6 @@ func (c *connections) register(name string, connection *connection) error {
 }
 
 func (c *connections) unregister(name string) error {
-	// NO MUTEX ON PURPOSE
 	if _, exists := c.list[name]; !exists {
 		return fmt.Errorf("connection %s does not exist", name)
 	}
@@ -42,8 +40,6 @@ func (c *connections) unregister(name string) error {
 }
 
 func (c *connections) broadcastText(author, text string) {
-	// NO MUTEX ON PURPOSE
-
 	push := &push{
 		Action: "message",
 		Payload: &pushMessage{
@@ -56,7 +52,6 @@ func (c *connections) broadcastText(author, text string) {
 }
 
 func (c *connections) broadcastUsersDetails() {
-	// NO MUTEX ON PURPOSE
 	usersDetails := make([]*userDetails, len(c.list))
 
 	var i int
@@ -80,6 +75,6 @@ func (c *connections) broadcastUsersDetails() {
 
 func (c *connections) broadcast(msg interface{}) {
 	for _, connection := range c.list {
-		connection.sendMessage(msg)
+		connection.writeC <- msg
 	}
 }

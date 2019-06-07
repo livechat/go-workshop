@@ -14,6 +14,8 @@ type connection struct {
 	socket      *websocket.Conn
 	handlers    *handlers
 	connections *connections
+	writeC      chan interface{}
+	closeC      chan struct{}
 }
 
 func newConnection(socket *websocket.Conn, handlers *handlers, connections *connections) *connection {
@@ -21,9 +23,12 @@ func newConnection(socket *websocket.Conn, handlers *handlers, connections *conn
 		socket:      socket,
 		handlers:    handlers,
 		connections: connections,
+		writeC:      make(chan interface{}),
+		closeC:      make(chan struct{}),
 	}
 
 	go c.reader()
+	go c.writer()
 
 	log.Print("new connection")
 
@@ -38,15 +43,23 @@ func (c *connection) reader() {
 			c.socket.Close()
 			c.connections.unregister(c.name)
 			c.connections.broadcastUsersDetails()
+			close(c.closeC)
 			return
 		}
 		c.handleRequest(req)
 	}
 }
 
-func (c *connection) sendMessage(msg interface{}) {
-	if err := c.socket.WriteJSON(msg); err != nil {
-		log.Printf("error sending message: %v", err)
+func (c *connection) writer() {
+	for {
+		select {
+		case msg := <-c.writeC:
+			if err := c.socket.WriteJSON(msg); err != nil {
+				log.Printf("error sending message: %v", err)
+			}
+		case <-c.closeC:
+			return
+		}
 	}
 }
 
@@ -93,7 +106,7 @@ func (c *connection) sendSuccess(action string, payload interface{}) {
 		Payload: payload,
 	}
 
-	c.sendMessage(response)
+	c.writeC <- response
 }
 
 func (c *connection) sendError(action, msg string) {
@@ -102,7 +115,7 @@ func (c *connection) sendError(action, msg string) {
 		Error:  msg,
 	}
 
-	c.sendMessage(response)
+	c.writeC <- response
 }
 
 func decode(src []byte, dst interface{}) error {
