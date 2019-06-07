@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"sync/atomic"
 )
 
 type connections struct {
@@ -43,9 +44,9 @@ func (c *connections) broadcastText(author, text string) {
 	}
 
 	c.broadcast(push)
-	c.messages++
+	atomic.AddUint64(&c.messages, +1)
 
-	log.Printf("`%s` sent #%d message number", author, c.messages)
+	log.Printf("`%s` sent #%d message number", author, atomic.LoadUint64(&c.messages))
 }
 
 func (c *connections) broadcastUsersDetails() {

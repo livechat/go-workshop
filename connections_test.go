@@ -46,7 +46,7 @@ func TestIntegration_Message(t *testing.T) {
 
 	// conversation begins! let's check if we get race conditions!
 	mike.send(login{"Mike", "mike.jpg"})
-	mike.send(broadcast{"Is there anybody outh there?"})
+	mike.send(broadcast{"Is there anybody out there?"})
 	greg.send(login{"Tom", "tom.png"})
 	mike.send(broadcast{"Hi, im new here ;>"})
 	greg.send(broadcast{"Oh! really?"})
