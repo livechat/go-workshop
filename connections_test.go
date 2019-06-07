@@ -59,6 +59,7 @@ func TestIntegration_Message(t *testing.T) {
 	mike.send(broadcast{"Hi, im new here ;>"})
 	greg.send(broadcast{"Oh! really?"})
 
+	time.Sleep(time.Second)
 }
 
 type client struct {
