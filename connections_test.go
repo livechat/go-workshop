@@ -34,17 +34,17 @@ func TestIntegration_Login(t *testing.T) {
 }
 
 func TestIntegration_Message(t *testing.T) {
-	var (
-		mike = newClient(host, prt, t)
-		greg = newClient(host, prt, t)
-	)
-
 	type (
 		login     struct{ Name, Avatar string }
 		broadcast struct{ Text string }
 	)
 
-	// conversation begins!
+	var (
+		mike = newClient(host, prt, t)
+		greg = newClient(host, prt, t)
+	)
+
+	// conversation begins! let's check if we get race conditions!
 	mike.send(login{"Mike", "mike.jpg"})
 	mike.send(broadcast{"Is there anybody outh there?"})
 	greg.send(login{"Tom", "tom.png"})
