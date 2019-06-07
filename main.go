@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-const port = 8000
+const port = 8080
 
 func main() {
 	server := newServer()
