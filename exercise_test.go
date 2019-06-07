@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"bytes"
 	"strings"
+	"testing"
 )
 
 func withPlus(x string) string {
@@ -42,4 +43,38 @@ func withStringBuilder(x string) string {
 	bb.WriteString(x)
 	bb.WriteString(x)
 	return bb.String()
+}
+
+var sink string
+
+func BenchmarkWithPlus(b *testing.B) {
+	var r string
+	for i := 0; i < b.N; i++ {
+		r = withPlus("hello")
+	}
+	sink = r
+}
+
+func BenchmarkWithSprintf(b *testing.B) {
+	var r string
+	for i := 0; i < b.N; i++ {
+		r = withSprintf("hello")
+	}
+	sink = r
+}
+
+func BenchmarkWithBuffer(b *testing.B) {
+	var r string
+	for i := 0; i < b.N; i++ {
+		r = withBuffer("hello")
+	}
+	sink = r
+}
+
+func BenchmarkWithBuilder(b *testing.B) {
+	var r string
+	for i := 0; i < b.N; i++ {
+		r = withStringBuilder("hello")
+	}
+	sink = r
 }
