@@ -15,6 +15,7 @@ type connection struct {
 	socket      *websocket.Conn
 	handlers    *handlers
 	connections *connections
+	m           sync.Mutex
 }
 
 func newConnection(socket *websocket.Conn, handlers *handlers, connections *connections) *connection {
@@ -38,12 +39,15 @@ func (c *connection) reader(wg *sync.WaitGroup) {
 	wg.Done()
 	for {
 		req := &request{}
+		c.m.Lock()
 		if err := c.socket.ReadJSON(req); err != nil {
 			log.Printf("disconnect: %v", err)
 			c.socket.Close()
 			// TODO: remove from connections
+			c.m.Unlock()
 			return
 		}
+		c.m.Unlock()
 		c.handleRequest(req)
 	}
 }
