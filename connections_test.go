@@ -12,17 +12,21 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+var (
+	host, prt = "localhost", 8085
+)
+
+func init() {
+	go startServer(host, prt)
+}
+
 func TestIntegration_Login(t *testing.T) {
-	host := "localhost"
-	port := 8085
 
-	go startServer(host, port)
-
-	c1 := newClient(host, port, t)
-	c2 := newClient(host, port, t)
-	c3 := newClient(host, port, t)
-	c4 := newClient(host, port, t)
-	c5 := newClient(host, port, t)
+	c1 := newClient(host, prt, t)
+	c2 := newClient(host, prt, t)
+	c3 := newClient(host, prt, t)
+	c4 := newClient(host, prt, t)
+	c5 := newClient(host, prt, t)
 
 	type login struct{ Name, Avatar string }
 
@@ -35,7 +39,27 @@ func TestIntegration_Login(t *testing.T) {
 	go c5.send(login{"JoannaY", "joanna.jpg"})
 	go c5.send(login{"JoannaZ", "joanna.jpg"})
 
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second)
+
+}
+
+func TestIntegration_Message(t *testing.T) {
+	var (
+		mike = newClient(host, prt, t)
+		greg = newClient(host, prt, t)
+	)
+
+	type (
+		login     struct{ Name, Avatar string }
+		broadcast struct{ Text string }
+	)
+
+	// conversation begins!
+	mike.send(login{"Mike", "mike.jpg"})
+	mike.send(broadcast{"Is there anybody outh there?"})
+	greg.send(login{"Tom", "tom.png"})
+	mike.send(broadcast{"Hi, im new here ;>"})
+	greg.send(broadcast{"Oh! really?"})
 
 }
 
@@ -56,7 +80,7 @@ func newClient(host string, port int, t *testing.T) *client {
 	return &client{c, t, sync.Mutex{}}
 }
 
-func (s *client) send(payload interface{}) {
+func (s *client) send(payload interface{}) *client {
 	type message struct {
 		Action  string      `json:"action"`
 		Payload interface{} `json:"payload"`
@@ -68,6 +92,8 @@ func (s *client) send(payload interface{}) {
 	if err := s.c.WriteJSON(message{reflect.TypeOf(payload).Name(), payload}); err != nil {
 		s.t.Fatal(err)
 	}
+
+	return s
 }
 
 func startServer(host string, port int) {

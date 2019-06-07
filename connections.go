@@ -7,8 +7,9 @@ import (
 )
 
 type connections struct {
-	list map[string]*connection
-	mu   sync.Mutex
+	list     map[string]*connection
+	mu       sync.Mutex
+	messages uint64
 }
 
 func newConnections() *connections {
@@ -42,6 +43,9 @@ func (c *connections) broadcastText(author, text string) {
 	}
 
 	c.broadcast(push)
+	c.messages++
+
+	log.Printf("`%s` sent #%d message number", author, c.messages)
 }
 
 func (c *connections) broadcastUsersDetails() {
