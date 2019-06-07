@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"log"
-	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -24,18 +23,14 @@ func newConnection(socket *websocket.Conn, handlers *handlers, connections *conn
 		connections: connections,
 	}
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go c.reader(wg)
-	wg.Wait()
+	go c.reader()
 
 	log.Print("new connection")
 
 	return c
 }
 
-func (c *connection) reader(wg *sync.WaitGroup) {
-	wg.Done()
+func (c *connection) reader() {
 	for {
 		req := &request{}
 		if err := c.socket.ReadJSON(req); err != nil {
