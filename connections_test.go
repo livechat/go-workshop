@@ -16,31 +16,21 @@ var (
 	host, prt = "localhost", 8085
 )
 
-func init() {
-	go startServer(host, prt)
-}
+// run chat server and wait for incoming websocket chatters
+func init() { go startServer(host, prt) }
 
 func TestIntegration_Login(t *testing.T) {
-
-	c1 := newClient(host, prt, t)
-	c2 := newClient(host, prt, t)
-	c3 := newClient(host, prt, t)
-	c4 := newClient(host, prt, t)
-	c5 := newClient(host, prt, t)
-
 	type login struct{ Name, Avatar string }
 
-	go c1.send(login{"Tom", "tom.png"})
-	go c2.send(login{"Greg", "greg.png"})
-	go c3.send(login{"Kate", "kate.png"})
-	go c4.send(login{"Jimbo", "jimbo.jpg"})
-	go c5.send(login{"Joanna", "joanna.jpg"})
-	go c5.send(login{"JoannaX", "joanna.jpg"})
-	go c5.send(login{"JoannaY", "joanna.jpg"})
-	go c5.send(login{"JoannaZ", "joanna.jpg"})
+	// let's join to the chat, multiple people logs in to the server
+	// in almost same time - let's see if we have race condition.
+	newClient(host, prt, t).send(login{"Tom", "tom.png"})
+	newClient(host, prt, t).send(login{"Greg", "greg.png"})
+	newClient(host, prt, t).send(login{"Kate", "kate.png"})
+	newClient(host, prt, t).send(login{"Jimbo", "jimbo.jpg"})
+	newClient(host, prt, t).send(login{"Joanna", "joanna.jpg"})
 
-	time.Sleep(time.Second)
-
+	time.Sleep(time.Second * 5)
 }
 
 func TestIntegration_Message(t *testing.T) {
@@ -72,7 +62,7 @@ type client struct {
 func newClient(host string, port int, t *testing.T) *client {
 	addr := fmt.Sprintf("ws://%s:%d/ws", host, port)
 
-	c, _, err := websocket.DefaultDialer.Dial(addr, nil)
+	c, _, err := (&websocket.Dialer{}).Dial(addr, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
