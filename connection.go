@@ -41,7 +41,6 @@ func (c *connection) reader() {
 			c.socket.Close()
 			c.connections.unregister(c.name)
 			c.connections.broadcastUsersDetails()
-			close(c.writeC)
 			return
 		}
 		c.handleRequest(req)
