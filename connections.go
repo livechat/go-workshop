@@ -3,12 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
-	"sync"
 )
 
 type connections struct {
 	list map[string]*connection
-	mu   sync.Mutex
 }
 
 func newConnections() *connections {
@@ -26,6 +24,19 @@ func (c *connections) register(name string, connection *connection) error {
 	c.list[name] = connection
 
 	log.Printf("connection registered: %s", name)
+
+	return nil
+}
+
+func (c *connections) unregister(name string) error {
+	// NO MUTEX ON PURPOSE
+	if _, exists := c.list[name]; !exists {
+		return fmt.Errorf("connection %s does not exist", name)
+	}
+
+	delete(c.list, name)
+
+	log.Printf("connection unregistered: %s", name)
 
 	return nil
 }
