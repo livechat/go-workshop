@@ -15,6 +15,7 @@ type connection struct {
 	socket      *websocket.Conn
 	handlers    *handlers
 	connections *connections
+	m           sync.Mutex
 }
 
 func newConnection(socket *websocket.Conn, handlers *handlers, connections *connections) *connection {
@@ -49,6 +50,9 @@ func (c *connection) reader(wg *sync.WaitGroup) {
 }
 
 func (c *connection) sendMessage(msg interface{}) {
+	c.m.Lock()
+	defer c.m.Unlock()
+
 	if err := c.socket.WriteJSON(msg); err != nil {
 		log.Printf("error sending message: %v", err)
 	}

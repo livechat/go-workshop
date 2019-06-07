@@ -3,11 +3,13 @@ package main
 import (
 	"errors"
 	"log"
+	"sync"
 )
 
 type handlers struct {
 	connections *connections
 	list        map[string]handler
+	m           sync.Mutex
 }
 
 type handler func(connection *connection, payload interface{}) (interface{}, error)
@@ -24,6 +26,9 @@ func newHandlers(connections *connections) *handlers {
 }
 
 func (h *handlers) loginHandler(connection *connection, payload interface{}) (interface{}, error) {
+	h.m.Lock()
+	defer h.m.Unlock()
+
 	pl, ok := payload.(*requestLogin)
 	if !ok {
 		log.Print("error: invalid login payload")
