@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"sync"
 
@@ -15,6 +14,7 @@ type connection struct {
 	socket      *websocket.Conn
 	handlers    *handlers
 	connections *connections
+	serializer  *gobSerializer
 }
 
 func newConnection(socket *websocket.Conn, handlers *handlers, connections *connections) *connection {
@@ -22,6 +22,7 @@ func newConnection(socket *websocket.Conn, handlers *handlers, connections *conn
 		socket:      socket,
 		handlers:    handlers,
 		connections: connections,
+		serializer:  newGobSerializer(),
 	}
 
 	wg := &sync.WaitGroup{}
@@ -74,7 +75,7 @@ func (c *connection) handleRequest(req *request) {
 		return
 	}
 
-	if err := decode(req.RawPayload, req.Payload); err != nil {
+	if err := c.decode(req.RawPayload, req.Payload); err != nil {
 		log.Printf("error unmarshaling payload: %v", err)
 		c.sendError(req.Action, "internal")
 		return
@@ -109,6 +110,6 @@ func (c *connection) sendError(action, msg string) {
 	c.sendMessage(response)
 }
 
-func decode(src []byte, dst interface{}) error {
-	return json.Unmarshal(src, dst)
+func (c *connection) decode(src []byte, dst interface{}) error {
+	return c.serializer.Unmarshal(src, dst)
 }
