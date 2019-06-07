@@ -74,7 +74,7 @@ func (c *connection) handleRequest(req *request) {
 		return
 	}
 
-	if err := json.Unmarshal(req.RawPayload, req.Payload); err != nil {
+	if err := decode(req.RawPayload, req.Payload); err != nil {
 		log.Printf("error unmarshaling payload: %v", err)
 		c.sendError(req.Action, "internal")
 		return
@@ -107,4 +107,8 @@ func (c *connection) sendError(action, msg string) {
 	}
 
 	c.sendMessage(response)
+}
+
+func decode(src []byte, dst interface{}) error {
+	return json.Unmarshal(src, dst)
 }
