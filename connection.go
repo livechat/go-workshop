@@ -15,7 +15,6 @@ type connection struct {
 	handlers    *handlers
 	connections *connections
 	writeC      chan interface{}
-	closeC      chan struct{}
 }
 
 func newConnection(socket *websocket.Conn, handlers *handlers, connections *connections) *connection {
@@ -24,7 +23,6 @@ func newConnection(socket *websocket.Conn, handlers *handlers, connections *conn
 		handlers:    handlers,
 		connections: connections,
 		writeC:      make(chan interface{}),
-		closeC:      make(chan struct{}),
 	}
 
 	go c.reader()
@@ -43,7 +41,7 @@ func (c *connection) reader() {
 			c.socket.Close()
 			c.connections.unregister(c.name)
 			c.connections.broadcastUsersDetails()
-			close(c.closeC)
+			close(c.writeC)
 			return
 		}
 		c.handleRequest(req)
@@ -52,13 +50,12 @@ func (c *connection) reader() {
 
 func (c *connection) writer() {
 	for {
-		select {
-		case msg := <-c.writeC:
-			if err := c.socket.WriteJSON(msg); err != nil {
-				log.Printf("error sending message: %v", err)
-			}
-		case <-c.closeC:
+		msg, ok := <-c.writeC
+		if !ok {
 			return
+		}
+		if err := c.socket.WriteJSON(msg); err != nil {
+			log.Printf("error sending message: %v", err)
 		}
 	}
 }
