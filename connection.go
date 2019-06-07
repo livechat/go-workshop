@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"log"
-	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -15,7 +14,7 @@ type connection struct {
 	socket      *websocket.Conn
 	handlers    *handlers
 	connections *connections
-	m           sync.Mutex
+	writeC      chan interface{}
 }
 
 func newConnection(socket *websocket.Conn, handlers *handlers, connections *connections) *connection {
@@ -23,38 +22,41 @@ func newConnection(socket *websocket.Conn, handlers *handlers, connections *conn
 		socket:      socket,
 		handlers:    handlers,
 		connections: connections,
+		writeC:      make(chan interface{}),
 	}
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go c.reader(wg)
-	wg.Wait()
+	go c.reader()
+	go c.writer()
 
 	log.Print("new connection")
 
 	return c
 }
 
-func (c *connection) reader(wg *sync.WaitGroup) {
-	wg.Done()
+func (c *connection) reader() {
 	for {
 		req := &request{}
 		if err := c.socket.ReadJSON(req); err != nil {
 			log.Printf("disconnect: %v", err)
 			c.socket.Close()
-			// TODO: remove from connections
+			c.connections.unregister(c.name)
+			c.connections.broadcastUsersDetails()
+			close(c.writeC)
 			return
 		}
 		c.handleRequest(req)
 	}
 }
 
-func (c *connection) sendMessage(msg interface{}) {
-	c.m.Lock()
-	defer c.m.Unlock()
-
-	if err := c.socket.WriteJSON(msg); err != nil {
-		log.Printf("error sending message: %v", err)
+func (c *connection) writer() {
+	for {
+		msg, ok := <-c.writeC
+		if !ok {
+			return
+		}
+		if err := c.socket.WriteJSON(msg); err != nil {
+			log.Printf("error sending message: %v", err)
+		}
 	}
 }
 
@@ -101,7 +103,7 @@ func (c *connection) sendSuccess(action string, payload interface{}) {
 		Payload: payload,
 	}
 
-	c.sendMessage(response)
+	c.writeC <- response
 }
 
 func (c *connection) sendError(action, msg string) {
@@ -110,7 +112,7 @@ func (c *connection) sendError(action, msg string) {
 		Error:  msg,
 	}
 
-	c.sendMessage(response)
+	c.writeC <- response
 }
 
 func decode(src []byte, dst interface{}) error {
