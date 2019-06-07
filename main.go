@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 )
 
-const port = 8000
+const port = 8080
 
 func main() {
 	server := newServer()
