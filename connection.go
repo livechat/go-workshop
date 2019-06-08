@@ -49,10 +49,7 @@ func (c *connection) reader() {
 
 func (c *connection) writer() {
 	for {
-		msg, ok := <-c.writeC
-		if !ok {
-			return
-		}
+		msg := <-c.writeC
 		if err := c.socket.WriteJSON(msg); err != nil {
 			log.Printf("error sending message: %v", err)
 		}
