@@ -39,20 +39,17 @@ func (c *connection) reader() {
 		if err := c.socket.ReadJSON(req); err != nil {
 			log.Printf("disconnect: %v", err)
 			c.socket.Close()
-			c.connections.unregister(c.name)
-			c.connections.broadcastUsersDetails()
 			return
 		}
+
 		c.handleRequest(req)
 	}
 }
 
 func (c *connection) writer() {
 	for {
-		msg, ok := <-c.writeC
-		if !ok {
-			return
-		}
+		msg := <-c.writeC
+
 		if err := c.socket.WriteJSON(msg); err != nil {
 			log.Printf("error sending message: %v", err)
 		}
