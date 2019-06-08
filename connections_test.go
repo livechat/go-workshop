@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"reflect"
-	"sync"
 	"testing"
 	"time"
 
@@ -44,7 +43,6 @@ func TestIntegration_Login(t *testing.T) {
 type client struct {
 	c *websocket.Conn
 	t *testing.T
-	m sync.Mutex
 }
 
 func newClient(host string, port int, t *testing.T) *client {
@@ -55,7 +53,7 @@ func newClient(host string, port int, t *testing.T) *client {
 		t.Fatal(err)
 	}
 
-	return &client{c, t, sync.Mutex{}}
+	return &client{c, t}
 }
 
 func (s *client) send(payload interface{}) {
@@ -63,9 +61,6 @@ func (s *client) send(payload interface{}) {
 		Action  string      `json:"action"`
 		Payload interface{} `json:"payload"`
 	}
-
-	s.m.Lock()
-	defer s.m.Unlock()
 
 	if err := s.c.WriteJSON(message{reflect.TypeOf(payload).Name(), payload}); err != nil {
 		s.t.Fatal(err)
