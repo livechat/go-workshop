@@ -38,7 +38,6 @@ func (h *handlers) loginHandler(connection *connection, payload interface{}) (in
 		return nil, errors.New("`avatar` is required")
 	}
 
-	// NO MUTEX ON PURPOSE
 	connection.name = pl.Name
 	connection.avatar = pl.Avatar
 
